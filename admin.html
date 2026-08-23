@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Qasr e Majeed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body">
+
+<!-- Login -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="arch-mark" style="margin:0 auto 14px;"></div>
+    <h2>Qasr e Majeed</h2>
+    <p>Admin Panel Login</p>
+    <form onsubmit="handleLogin(event)">
+      <input type="text" id="loginUser" placeholder="Username" autocomplete="username" required>
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" required>
+      <div class="login-error" id="loginError"></div>
+      <button type="submit" class="btn-primary" style="width:100%;">Login</button>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Shell -->
+<div class="admin-shell" id="adminShell">
+  <div class="admin-topbar">
+    <h2>Qasr e Majeed — Admin</h2>
+    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="orders" onclick="switchTab('orders')">Orders</button>
+    <button class="tab-btn" data-tab="menu" onclick="switchTab('menu')">Menu Management</button>
+    <button class="tab-btn" data-tab="categories" onclick="switchTab('categories')">Categories</button>
+  </div>
+
+  <div class="tab-panel active" id="tab-orders">
+    <div class="orders-list" id="ordersList"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-menu">
+    <div class="menu-toolbar">
+      <button class="btn-primary" onclick="openItemModal(null)">+ Add New Item</button>
+    </div>
+    <div class="admin-menu-grid" id="adminMenuGrid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-categories">
+    <div class="menu-toolbar">
+      <button class="btn-primary" onclick="openCategoryModal(null)">+ Add Category</button>
+    </div>
+    <div class="category-admin-grid" id="adminCategoryGrid"></div>
+  </div>
+</div>
+
+<!-- Item Modal -->
+<div class="modal-overlay" id="itemModal">
+  <div class="modal-card">
+    <h3 id="modalTitle">Add New Item</h3>
+    <form class="form-grid" id="itemForm" onsubmit="saveItem(event)">
+      <div>
+        <label>Item Name</label>
+        <input type="text" id="fName" required>
+      </div>
+      <div>
+        <label>Price (Rs)</label>
+        <input type="number" id="fPrice" min="1" required>
+      </div>
+      <div>
+        <label>Category</label>
+        <select id="fCategory" required></select>
+      </div>
+      <div>
+        <label>Image URL</label>
+        <input type="url" id="fImage" placeholder="https://..." required>
+      </div>
+      <div>
+        <label>Description</label>
+        <textarea id="fDesc" rows="3"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeItemModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save Item</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal-overlay" id="categoryModal">
+  <div class="modal-card">
+    <h3 id="catModalTitle">Add Category</h3>
+    <form class="form-grid" id="categoryForm" onsubmit="saveCategory(event)">
+      <div>
+        <label>Category Name</label>
+        <input type="text" id="catName" placeholder="e.g. Desserts" required>
+      </div>
+      <div>
+        <label>Icon (emoji)</label>
+        <input type="text" id="catIcon" placeholder="e.g. 🍰" maxlength="4">
+      </div>
+      <div>
+        <label>Tagline</label>
+        <input type="text" id="catTagline" placeholder="Short description">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeCategoryModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save Category</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

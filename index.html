@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qasr e Majeed — Order Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><span class="arch-mark"></span>Qasr e <span class="gold">Majeed</span></a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html" class="active">Home</a>
+      <a href="menu.html">Menu</a>
+    </nav>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="cart-btn" onclick="toggleCart(true)">
+        🛒 Cart <span class="cart-count" id="cartCount">0</span>
+      </button>
+      <button class="nav-toggle" onclick="toggleNav()">☰</button>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Qasr e Majeed · Since the first order</p>
+    <h1>Royal flavours,<br>delivered to your door.</h1>
+    <p>Pizza, burgers and palace-style feasts — freshly made and delivered hot. Order now and taste the difference.</p>
+    <a href="menu.html" class="btn-primary">View Menu</a>
+  </div>
+  <div class="hero-art">
+    <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800&q=80" alt="Signature dish from Qasr e Majeed">
+  </div>
+</section>
+
+<div class="arch-divider"></div>
+
+<section class="section" id="mostSellingSection">
+  <div class="section-head">
+    <p class="eyebrow">Customer Favourites</p>
+    <h2>Most Selling Products</h2>
+    <p>The dishes our guests order again and again.</p>
+  </div>
+  <div class="menu-grid" id="mostSellingGrid"></div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <p class="eyebrow">Choose your craving</p>
+    <h2>Categories</h2>
+    <p>Every category has its own signature taste.</p>
+  </div>
+  <div id="homeCategorySections"></div>
+</section>
+
+<div class="arch-divider"></div>
+
+<section class="section">
+  <div class="section-head">
+    <p class="eyebrow">Inside Qasr e Majeed</p>
+    <h2>A Glimpse of the Palace</h2>
+    <p>Take a look at our royal setting.</p>
+  </div>
+  <div class="gallery-wrap">
+    <div class="gallery-track" id="galleryTrack"></div>
+    <button class="gallery-arrow prev" onclick="prevSlide()">‹</button>
+    <button class="gallery-arrow next" onclick="nextSlide()">›</button>
+  </div>
+  <div class="gallery-dots" id="galleryDots"></div>
+</section>
+
+<footer class="site-footer">
+  <div class="logo"><span class="arch-mark"></span>Qasr e Majeed</div>
+  <p>Delivering royal flavours, one order at a time. © 2026 Qasr e Majeed.</p>
+</footer>
+
+<!-- Cart Drawer -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart(false)"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <h3>Your Order</h3>
+    <button class="cart-close" onclick="toggleCart(false)">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total-row"><span>Total</span><span id="cartTotal">Rs 0</span></div>
+    <form class="checkout-form" id="checkoutForm" onsubmit="placeOrder(event)">
+      <input type="text" id="custName" placeholder="Your name" required>
+      <input type="tel" id="custPhone" placeholder="Phone number" required>
+      <textarea id="custAddress" rows="2" placeholder="Delivery address" required></textarea>
+      <button type="submit" class="btn-primary" style="width:100%;text-align:center;margin-top:6px;">Place Order</button>
+    </form>
+  </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/script.js"></script>
+<script>
+  (async () => {
+    const menu = await renderMostSelling();
+    await renderHomeCategorySections(menu);
+    renderGallery();
+  })();
+</script>
+</body>
+</html>
