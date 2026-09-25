@@ -3,28 +3,52 @@
 const CART_KEY = "qem_cart";
 
 function getCart() {
-  try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
-  catch (e) { return []; }
+  let cart;
+  try { cart = JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+  catch (e) { cart = []; }
+  // Backward-compat: older carts saved before extras support had no lineId.
+  cart.forEach((c) => { if (!c.lineId) c.lineId = c.id; });
+  return cart;
 }
 function saveCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   renderCartCount();
 }
-function addToCart(item) {
+
+/* item: the menu item. selectedExtras: array of {name, price} the customer picked. */
+function addToCart(item, selectedExtras) {
+  selectedExtras = selectedExtras || [];
   const cart = getCart();
-  const existing = cart.find((c) => c.id === item.id);
-  if (existing) existing.qty += 1;
-  else cart.push({ id: item.id, name: item.name, price: item.price, image: item.image, qty: 1 });
+  const extrasTotal = selectedExtras.reduce((s, ex) => s + ex.price, 0);
+  const unitPrice = item.price + extrasTotal;
+  const extrasKey = selectedExtras.map((ex) => ex.name).sort().join("|");
+  const lineId = item.id + (extrasKey ? "::" + extrasKey : "");
+
+  const existing = cart.find((c) => c.lineId === lineId);
+  if (existing) {
+    existing.qty += 1;
+  } else {
+    cart.push({
+      lineId,
+      id: item.id,
+      name: item.name,
+      price: unitPrice,
+      image: item.image,
+      qty: 1,
+      extras: selectedExtras,
+    });
+  }
   saveCart(cart);
   renderCartDrawer();
   showToast(item.name + " added to cart");
 }
-function changeQty(id, delta) {
+
+function changeQty(lineId, delta) {
   let cart = getCart();
-  const line = cart.find((c) => c.id === id);
+  const line = cart.find((c) => c.lineId === lineId);
   if (!line) return;
   line.qty += delta;
-  if (line.qty <= 0) cart = cart.filter((c) => c.id !== id);
+  if (line.qty <= 0) cart = cart.filter((c) => c.lineId !== lineId);
   saveCart(cart);
   renderCartDrawer();
 }
@@ -54,10 +78,11 @@ function renderCartDrawer() {
         <img src="${l.image}" alt="${l.name}">
         <div class="cart-line-info">
           <h4>${l.name}</h4>
+          ${l.extras && l.extras.length ? `<div class="cart-line-extras">+ ${l.extras.map((ex) => ex.name).join(", ")}</div>` : ""}
           <div class="qty-controls">
-            <button onclick="changeQty('${l.id}', -1)">−</button>
+            <button onclick="changeQty('${l.lineId}', -1)">−</button>
             <span>${l.qty}</span>
-            <button onclick="changeQty('${l.id}', 1)">+</button>
+            <button onclick="changeQty('${l.lineId}', 1)">+</button>
           </div>
         </div>
         <div class="price">${qemFormatPrice(l.price * l.qty)}</div>
@@ -100,7 +125,13 @@ async function placeOrder(e) {
     customerName: name,
     phone,
     address,
-    items: cart.map((l) => ({ menuItemId: l.id, name: l.name, price: l.price, quantity: l.qty })),
+    items: cart.map((l) => ({
+      menuItemId: l.id,
+      name: l.name,
+      price: l.price,
+      quantity: l.qty,
+      extras: l.extras || [],
+    })),
     totalAmount: cartTotal(),
   };
   const submitBtn = e.target.querySelector('button[type="submit"]');
@@ -122,6 +153,10 @@ async function placeOrder(e) {
 }
 
 function itemCardHtml(i, badge) {
+  const hasExtras = i.extras && i.extras.length > 0;
+  const btnAction = hasExtras
+    ? `onclick='openExtrasModal(${JSON.stringify(i)})'`
+    : `onclick='addToCart(${JSON.stringify(i)})'`;
   return `
     <div class="item-card">
       <div class="item-media">
@@ -134,10 +169,55 @@ function itemCardHtml(i, badge) {
         <p class="desc">${i.description}</p>
         <div class="item-footer">
           <span class="price">${qemFormatPrice(i.price)}</span>
-          <button class="add-btn" ${!i.isAvailable ? "disabled" : ""} onclick='addToCart(${JSON.stringify(i)})'>Add to Cart</button>
+          <button class="add-btn" ${!i.isAvailable ? "disabled" : ""} ${btnAction}>Add to Cart</button>
         </div>
       </div>
     </div>`;
+}
+
+/* ---------- Extras / Add-ons selection modal ---------- */
+let currentExtrasItem = null;
+
+function openExtrasModal(item) {
+  currentExtrasItem = item;
+  const modal = document.getElementById("extrasModal");
+  const body = document.getElementById("extrasModalBody");
+  document.getElementById("extrasModalTitle").textContent = item.name;
+  body.innerHTML = item.extras
+    .map(
+      (ex, idx) => `
+    <label class="extra-option">
+      <input type="checkbox" class="extra-checkbox" data-idx="${idx}" onchange="updateExtrasTotal()">
+      <span>${ex.name}</span>
+      <span class="extra-option-price">+${qemFormatPrice(ex.price)}</span>
+    </label>`
+    )
+    .join("");
+  updateExtrasTotal();
+  modal.classList.add("open");
+}
+
+function closeExtrasModal() {
+  document.getElementById("extrasModal").classList.remove("open");
+  currentExtrasItem = null;
+}
+
+function updateExtrasTotal() {
+  if (!currentExtrasItem) return;
+  const checked = document.querySelectorAll(".extra-checkbox:checked");
+  let extrasTotal = 0;
+  checked.forEach((cb) => {
+    extrasTotal += currentExtrasItem.extras[Number(cb.dataset.idx)].price;
+  });
+  document.getElementById("extrasModalTotal").textContent = qemFormatPrice(currentExtrasItem.price + extrasTotal);
+}
+
+function confirmAddWithExtras() {
+  if (!currentExtrasItem) return;
+  const checked = document.querySelectorAll(".extra-checkbox:checked");
+  const selectedExtras = Array.from(checked).map((cb) => currentExtrasItem.extras[Number(cb.dataset.idx)]);
+  addToCart(currentExtrasItem, selectedExtras);
+  closeExtrasModal();
 }
 
 /* ---------- Home page: most selling products ---------- */
