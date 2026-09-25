@@ -1,13 +1,33 @@
 /* Qasr e Majeed — Admin panel logic (Firestore-backed)
    NOTE: Login below is a simple client-side check, not real Firebase
    Authentication — fine for managing your own restaurant, but don't
-   rely on it to hide anything sensitive. See FIREBASE_SETUP.md for
-   more secure options later. */
+   rely on it to hide anything sensitive. Login credentials are stored
+   in Firestore (settings/adminAuth) so they can be changed from the
+   Settings tab without editing code. */
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "qasr123";
+let ADMIN_USER = "admin";
+let ADMIN_PASS = "qasr123";
+let credentialsLoaded = false;
 
 let ordersUnsubscribe = null;
+
+async function loadAdminCredentials() {
+  try {
+    const doc = await qemDb.collection("settings").doc("adminAuth").get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.username) ADMIN_USER = data.username;
+      if (data.password) ADMIN_PASS = data.password;
+    } else {
+      // First run — seed Firestore with the current defaults.
+      await qemDb.collection("settings").doc("adminAuth").set({ username: ADMIN_USER, password: ADMIN_PASS });
+    }
+  } catch (err) {
+    console.error("Could not load admin credentials, using defaults", err);
+  } finally {
+    credentialsLoaded = true;
+  }
+}
 
 function checkAdminAuth() {
   const isAuth = sessionStorage.getItem(QEM_ADMIN_KEY) === "true";
@@ -22,9 +42,13 @@ function checkAdminAuth() {
 
 function handleLogin(e) {
   e.preventDefault();
+  const err = document.getElementById("loginError");
+  if (!credentialsLoaded) {
+    err.textContent = "Still loading — please try again in a moment.";
+    return;
+  }
   const u = document.getElementById("loginUser").value.trim();
   const p = document.getElementById("loginPass").value.trim();
-  const err = document.getElementById("loginError");
   if (u === ADMIN_USER && p === ADMIN_PASS) {
     sessionStorage.setItem(QEM_ADMIN_KEY, "true");
     err.textContent = "";
@@ -43,6 +67,54 @@ function handleLogout() {
 function switchTab(tab) {
   document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
   document.querySelectorAll(".tab-panel").forEach((p) => p.classList.toggle("active", p.id === "tab-" + tab));
+  if (tab === "settings") {
+    document.getElementById("newUser").value = ADMIN_USER;
+  }
+}
+
+/* ---------- Settings: change admin login ---------- */
+async function saveSettings(e) {
+  e.preventDefault();
+  const curPass = document.getElementById("curPass").value;
+  const newUser = document.getElementById("newUser").value.trim();
+  const newPass = document.getElementById("newPass").value;
+  const confirmPass = document.getElementById("confirmPass").value;
+  const errEl = document.getElementById("settingsError");
+  const successEl = document.getElementById("settingsSuccess");
+  errEl.textContent = "";
+  successEl.textContent = "";
+
+  if (curPass !== ADMIN_PASS) {
+    errEl.textContent = "Current password is incorrect.";
+    return;
+  }
+  if (!newUser || !newPass) {
+    errEl.textContent = "Please fill in all fields.";
+    return;
+  }
+  if (newPass !== confirmPass) {
+    errEl.textContent = "New passwords do not match.";
+    return;
+  }
+  if (newPass.length < 4) {
+    errEl.textContent = "Password must be at least 4 characters.";
+    return;
+  }
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    await qemDb.collection("settings").doc("adminAuth").set({ username: newUser, password: newPass });
+    ADMIN_USER = newUser;
+    ADMIN_PASS = newPass;
+    successEl.textContent = "Login details updated successfully.";
+    document.getElementById("settingsForm").reset();
+    document.getElementById("newUser").value = ADMIN_USER;
+  } catch (err) {
+    errEl.textContent = "Update failed — check your internet connection.";
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ---------- Orders (live updates via Firestore listener) ---------- */
@@ -81,7 +153,12 @@ function renderOrders(orders) {
   wrap.innerHTML = orders
     .map((o) => {
       const itemsHtml = o.items
-        .map((i) => `<div><span>${i.name} × ${i.quantity}</span><span>${qemFormatPrice(i.price * i.quantity)}</span></div>`)
+        .map((i) => {
+          const extrasHtml = i.extras && i.extras.length
+            ? i.extras.map((ex) => `<div class="order-extra-line">+ ${ex.name} (${qemFormatPrice(ex.price)})</div>`).join("")
+            : "";
+          return `<div class="order-item-line"><div><span>${i.name} × ${i.quantity}</span><span>${qemFormatPrice(i.price * i.quantity)}</span></div>${extrasHtml}</div>`;
+        })
         .join("");
       const optionsHtml = STATUS_FLOW.map(
         (s) => `<option value="${s}" ${o.status === s ? "selected" : ""}>${STATUS_LABEL[s]}</option>`
@@ -243,6 +320,7 @@ async function renderAdminMenu() {
         <span class="cat-tag">${(categories.find((c) => c.id === i.category) || {}).name || i.category}</span>
         <h4>${i.name}</h4>
         <div class="price">${qemFormatPrice(i.price)}</div>
+        ${i.extras && i.extras.length ? `<div class="extras-tag">${i.extras.length} extra option(s) available</div>` : ""}
         <label class="avail-toggle">
           <input type="checkbox" ${i.isAvailable ? "checked" : ""} onchange="toggleItemFlag('${i.id}', 'isAvailable', this.checked)">
           Available
@@ -284,12 +362,40 @@ async function deleteItem(id) {
   }
 }
 
+/* ---------- Extras / Add-ons builder (inside item form) ---------- */
+function addExtraRow(name, price) {
+  name = name || "";
+  price = price === undefined || price === null ? "" : price;
+  const wrap = document.getElementById("extrasBuilder");
+  const row = document.createElement("div");
+  row.className = "extra-row";
+  row.innerHTML = `
+    <input type="text" class="extra-name" placeholder="e.g. Extra Cheese" value="${name}">
+    <input type="number" class="extra-price" placeholder="Price" min="0" value="${price}">
+    <button type="button" class="extra-remove" onclick="this.parentElement.remove()" title="Remove">✕</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function collectExtras() {
+  const rows = document.querySelectorAll("#extrasBuilder .extra-row");
+  const extras = [];
+  rows.forEach((row) => {
+    const name = row.querySelector(".extra-name").value.trim();
+    const price = Number(row.querySelector(".extra-price").value);
+    if (name && !isNaN(price) && price >= 0) extras.push({ name, price });
+  });
+  return extras;
+}
+
 function openItemModal(id) {
   editingItemId = id || null;
   const modal = document.getElementById("itemModal");
   const title = document.getElementById("modalTitle");
   const catSelect = document.getElementById("fCategory");
   catSelect.innerHTML = cachedCategories.map((c) => `<option value="${c.id}">${c.icon || ""} ${c.name}</option>`).join("");
+
+  document.getElementById("extrasBuilder").innerHTML = "";
 
   if (id) {
     const item = cachedMenu.find((i) => i.id === id);
@@ -299,6 +405,7 @@ function openItemModal(id) {
     document.getElementById("fCategory").value = item.category;
     document.getElementById("fImage").value = item.image;
     document.getElementById("fDesc").value = item.description;
+    (item.extras || []).forEach((ex) => addExtraRow(ex.name, ex.price));
   } else {
     title.textContent = "Add New Item";
     document.getElementById("itemForm").reset();
@@ -318,6 +425,7 @@ async function saveItem(e) {
   const category = document.getElementById("fCategory").value;
   const image = document.getElementById("fImage").value.trim();
   const description = document.getElementById("fDesc").value.trim();
+  const extras = collectExtras();
 
   if (!name || !price || !image) return;
 
@@ -325,10 +433,10 @@ async function saveItem(e) {
   saveBtn.disabled = true;
   try {
     if (editingItemId) {
-      await qemUpdateMenuItem(editingItemId, { name, price, category, image, description });
+      await qemUpdateMenuItem(editingItemId, { name, price, category, image, description, extras });
     } else {
       await qemCreateMenuItem({
-        name, price, category, image, description,
+        name, price, category, image, description, extras,
         isAvailable: true, isMostSelling: false, showOnHome: false,
       });
     }
@@ -341,4 +449,7 @@ async function saveItem(e) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", checkAdminAuth);
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadAdminCredentials();
+  checkAdminAuth();
+});
