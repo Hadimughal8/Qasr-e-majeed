@@ -37,6 +37,7 @@
     <button class="tab-btn active" data-tab="orders" onclick="switchTab('orders')">Orders</button>
     <button class="tab-btn" data-tab="menu" onclick="switchTab('menu')">Menu Management</button>
     <button class="tab-btn" data-tab="categories" onclick="switchTab('categories')">Categories</button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">Settings</button>
   </div>
 
   <div class="tab-panel active" id="tab-orders">
@@ -55,6 +56,33 @@
       <button class="btn-primary" onclick="openCategoryModal(null)">+ Add Category</button>
     </div>
     <div class="category-admin-grid" id="adminCategoryGrid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-settings">
+    <div class="settings-card">
+      <h3>Change Admin Login Details</h3>
+      <form id="settingsForm" onsubmit="saveSettings(event)">
+        <div>
+          <label>Current Password</label>
+          <input type="password" id="curPass" autocomplete="current-password" required>
+        </div>
+        <div>
+          <label>New Username</label>
+          <input type="text" id="newUser" autocomplete="username" required>
+        </div>
+        <div>
+          <label>New Password</label>
+          <input type="password" id="newPass" autocomplete="new-password" minlength="4" required>
+        </div>
+        <div>
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPass" autocomplete="new-password" minlength="4" required>
+        </div>
+        <div class="settings-error" id="settingsError"></div>
+        <div class="settings-success" id="settingsSuccess"></div>
+        <button type="submit" class="btn-primary" style="width:100%;">Update Login Details</button>
+      </form>
+    </div>
   </div>
 </div>
 
@@ -82,6 +110,11 @@
       <div>
         <label>Description</label>
         <textarea id="fDesc" rows="3"></textarea>
+      </div>
+      <div>
+        <label>Extras / Add-ons (optional)</label>
+        <div class="extras-builder" id="extrasBuilder"></div>
+        <button type="button" class="btn-add-extra" onclick="addExtraRow()">+ Add Extra</button>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn-cancel" onclick="closeItemModal()">Cancel</button>
