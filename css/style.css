@@ -476,6 +476,30 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; colo
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ---------- Extras / Add-ons modal (customer side) ---------- */
+.extras-modal-overlay {
+  position: fixed; inset: 0; background: rgba(43,33,24,0.5); z-index: 150;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.extras-modal-overlay.open { display: flex; }
+.extras-modal-card {
+  background: var(--white); border-radius: 20px; padding: 24px; width: 100%; max-width: 420px;
+  max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-soft);
+}
+.extras-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.extras-modal-head h3 { font-size: 1.3rem; }
+.extra-option {
+  display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px dashed var(--line);
+  font-size: 0.92rem; cursor: pointer;
+}
+.extra-option span:nth-child(2) { flex: 1; }
+.extra-option-price { color: var(--saffron-deep); font-weight: 600; }
+.extras-modal-footer {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 18px; gap: 12px;
+}
+.extras-modal-footer strong { color: var(--maroon); }
+.cart-line-extras { font-size: 0.78rem; color: var(--charcoal-soft); margin: 2px 0 4px; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
   .hero { grid-template-columns: 1fr; }
