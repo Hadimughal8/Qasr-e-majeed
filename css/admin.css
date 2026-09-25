@@ -15,7 +15,7 @@ body.admin-body { background: var(--ivory-deep); }
 }
 .logout-btn:hover { border-color: var(--maroon); color: var(--maroon); }
 
-.tab-bar { display: flex; gap: 10px; margin-bottom: 26px; }
+.tab-bar { display: flex; gap: 10px; margin-bottom: 26px; flex-wrap: wrap; }
 .tab-btn {
   background: var(--white); border: 1.5px solid var(--line); border-radius: 999px;
   padding: 10px 22px; font-weight: 600; font-size: 0.9rem; color: var(--charcoal-soft);
@@ -55,7 +55,9 @@ body.admin-body { background: var(--ivory-deep); }
 .order-customer { font-weight: 700; font-size: 1.05rem; margin: 2px 0; }
 .order-meta { font-size: 0.85rem; color: var(--charcoal-soft); }
 .order-items { margin: 12px 0; font-size: 0.88rem; }
-.order-items div { padding: 3px 0; border-bottom: 1px dashed var(--line); display: flex; justify-content: space-between; }
+.order-item-line { padding: 4px 0; border-bottom: 1px dashed var(--line); }
+.order-item-line > div:first-child { display: flex; justify-content: space-between; }
+.order-extra-line { font-size: 0.78rem; color: var(--charcoal-soft); padding-left: 12px; }
 .order-total { font-weight: 700; color: var(--maroon); }
 .order-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 10px; flex-wrap: wrap; }
 .order-actions { display: flex; align-items: center; gap: 10px; }
@@ -85,6 +87,7 @@ body.admin-body { background: var(--ivory-deep); }
 .admin-item-body { padding: 14px 16px 16px; }
 .admin-item-body h4 { font-family: var(--font-body); font-size: 1rem; margin: 0 0 4px; }
 .admin-item-body .cat-tag { font-size: 0.72rem; color: var(--saffron-deep); font-weight: 700; text-transform: uppercase; }
+.extras-tag { font-size: 0.72rem; color: var(--charcoal-soft); margin-top: 4px; }
 .admin-item-actions { display: flex; gap: 8px; margin-top: 10px; }
 .admin-item-actions button {
   flex: 1; padding: 8px 0; border-radius: 8px; border: 1px solid var(--line); font-size: 0.8rem; font-weight: 600; background: var(--ivory);
@@ -114,6 +117,22 @@ body.admin-body { background: var(--ivory-deep); }
 .btn-cancel { background: var(--ivory-deep); color: var(--charcoal-soft); }
 .btn-save { background: var(--saffron); color: var(--charcoal); }
 
+/* Extras builder (inside item form) */
+.extras-builder { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+.extra-row { display: flex; gap: 8px; align-items: center; }
+.extra-row .extra-name { flex: 2; }
+.extra-row .extra-price { flex: 1; }
+.extra-remove {
+  background: var(--ivory-deep); border: 1px solid var(--line); border-radius: 8px;
+  width: 34px; height: 34px; flex-shrink: 0; color: var(--maroon); font-weight: 700;
+}
+.extra-remove:hover { background: var(--maroon); color: var(--white); border-color: var(--maroon); }
+.btn-add-extra {
+  background: var(--ivory-deep); border: 1.5px dashed var(--line); border-radius: 8px;
+  padding: 9px 14px; font-size: 0.82rem; font-weight: 600; color: var(--charcoal-soft); width: 100%;
+}
+.btn-add-extra:hover { border-color: var(--saffron-deep); color: var(--saffron-deep); }
+
 @media (max-width: 880px) {
   .admin-menu-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -138,3 +157,18 @@ body.admin-body { background: var(--ivory-deep); }
 @media (max-width: 880px) {
   .category-admin-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Settings tab */
+.settings-card {
+  background: var(--white); border: 1px solid var(--line); border-radius: 16px;
+  padding: 26px; max-width: 420px; box-shadow: var(--shadow-card);
+}
+.settings-card h3 { margin-bottom: 18px; font-size: 1.2rem; }
+.settings-card form { display: flex; flex-direction: column; gap: 12px; }
+.settings-card label { font-size: 0.82rem; font-weight: 600; color: var(--charcoal-soft); display: block; margin-bottom: 4px; }
+.settings-card input {
+  width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); font-family: inherit; font-size: 0.9rem;
+}
+.settings-card input:focus { outline: 2px solid var(--saffron); border-color: var(--saffron); }
+.settings-error { color: var(--maroon); font-size: 0.82rem; min-height: 18px; }
+.settings-success { color: #1F7A34; font-size: 0.82rem; min-height: 18px; }
