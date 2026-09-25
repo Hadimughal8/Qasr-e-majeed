@@ -59,6 +59,21 @@
   </div>
 </aside>
 
+<!-- Extras Modal -->
+<div class="extras-modal-overlay" id="extrasModal">
+  <div class="extras-modal-card">
+    <div class="extras-modal-head">
+      <h3 id="extrasModalTitle">Item</h3>
+      <button class="cart-close" onclick="closeExtrasModal()">✕</button>
+    </div>
+    <div class="extras-modal-body" id="extrasModalBody"></div>
+    <div class="extras-modal-footer">
+      <span>Total: <strong id="extrasModalTotal">Rs 0</strong></span>
+      <button class="btn-primary" onclick="confirmAddWithExtras()">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
