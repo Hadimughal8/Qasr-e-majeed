@@ -297,27 +297,11 @@ async function deleteCategory(id) {
 let editingItemId = null;
 let cachedMenu = [];
 
-async function renderAdminMenu() {
-  const grid = document.getElementById("adminMenuGrid");
-  grid.innerHTML = '<div class="empty-state">Loading menu...</div>';
-  try {
-    cachedMenu = await qemGetMenu();
-  } catch (err) {
-    grid.innerHTML = '<div class="empty-state">Menu could not load. Check Firebase setup.</div>';
-    return;
-  }
-  const categories = cachedCategories.length ? cachedCategories : await qemGetCategories();
-  if (cachedMenu.length === 0) {
-    grid.innerHTML = '<div class="empty-state">No menu items yet. Use "Add New Item" to start.</div>';
-    return;
-  }
-  grid.innerHTML = cachedMenu
-    .map(
-      (i) => `
+function adminItemCardHtml(i) {
+  return `
     <div class="admin-item-card">
       <img src="${i.image}" alt="${i.name}">
       <div class="admin-item-body">
-        <span class="cat-tag">${(categories.find((c) => c.id === i.category) || {}).name || i.category}</span>
         <h4>${i.name}</h4>
         <div class="price">${qemFormatPrice(i.price)}</div>
         ${i.extras && i.extras.length ? `<div class="extras-tag">${i.extras.length} extra option(s) available</div>` : ""}
@@ -338,9 +322,56 @@ async function renderAdminMenu() {
           <button class="del-btn" onclick="deleteItem('${i.id}')">Delete</button>
         </div>
       </div>
-    </div>`
-    )
+    </div>`;
+}
+
+async function renderAdminMenu() {
+  const grid = document.getElementById("adminMenuGrid");
+  grid.innerHTML = '<div class="empty-state">Loading menu...</div>';
+  try {
+    cachedMenu = await qemGetMenu();
+  } catch (err) {
+    grid.innerHTML = '<div class="empty-state">Menu could not load. Check Firebase setup.</div>';
+    return;
+  }
+  const categories = cachedCategories.length ? cachedCategories : (cachedCategories = await qemGetCategories());
+  if (cachedMenu.length === 0) {
+    grid.innerHTML = '<div class="empty-state">No menu items yet. Use "Add New Item" to start.</div>';
+    return;
+  }
+
+  // Same categories/order as the customer-facing site — one grouped section per category.
+  const groupsHtml = categories
+    .map((cat) => {
+      const items = cachedMenu.filter((i) => i.category === cat.id);
+      if (items.length === 0) return "";
+      return `
+      <div class="admin-category-group">
+        <div class="admin-category-group-head">
+          <span class="admin-category-group-icon">${cat.icon || "🍴"}</span>
+          <h3>${cat.name}</h3>
+          <span class="admin-category-group-count">${items.length} item${items.length > 1 ? "s" : ""}</span>
+        </div>
+        <div class="admin-menu-grid">${items.map((i) => adminItemCardHtml(i)).join("")}</div>
+      </div>`;
+    })
     .join("");
+
+  // Any item whose category was deleted still shows up, so nothing gets hidden.
+  const knownCatIds = categories.map((c) => c.id);
+  const orphaned = cachedMenu.filter((i) => !knownCatIds.includes(i.category));
+  const orphanedHtml = orphaned.length
+    ? `<div class="admin-category-group">
+        <div class="admin-category-group-head">
+          <span class="admin-category-group-icon">❓</span>
+          <h3>Uncategorized</h3>
+          <span class="admin-category-group-count">${orphaned.length} item${orphaned.length > 1 ? "s" : ""}</span>
+        </div>
+        <div class="admin-menu-grid">${orphaned.map((i) => adminItemCardHtml(i)).join("")}</div>
+      </div>`
+    : "";
+
+  grid.innerHTML = groupsHtml + orphanedHtml || '<div class="empty-state">No menu items yet.</div>';
 }
 
 async function toggleItemFlag(id, flag, checked) {
