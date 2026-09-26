@@ -306,13 +306,28 @@ function startGalleryAutoplay() {
 /* ---------- Menu page ---------- */
 let activeCategory = "all";
 let allMenuItems = [];
+let searchQuery = "";
+
+function handleSearchInput() {
+  const el = document.getElementById("siteSearchInput");
+  searchQuery = el ? el.value.trim().toLowerCase() : "";
+  renderMenu();
+}
 
 async function renderMenu() {
   const grid = document.getElementById("menuGrid");
   if (!grid) return;
-  const items = allMenuItems.filter((i) => activeCategory === "all" || i.category === activeCategory);
+  let items = allMenuItems.filter((i) => activeCategory === "all" || i.category === activeCategory);
+  if (searchQuery) {
+    items = items.filter(
+      (i) =>
+        i.name.toLowerCase().includes(searchQuery) ||
+        (i.description || "").toLowerCase().includes(searchQuery)
+    );
+  }
   if (items.length === 0) {
-    grid.innerHTML = '<p style="text-align:center;color:var(--charcoal-soft);grid-column:1/-1;">No items in this category yet.</p>';
+    const msg = searchQuery ? `No items match "${searchQuery}".` : "No items in this category yet.";
+    grid.innerHTML = `<p style="text-align:center;color:var(--charcoal-soft);grid-column:1/-1;">${msg}</p>`;
     return;
   }
   grid.innerHTML = items.map((i) => itemCardHtml(i)).join("");
@@ -351,6 +366,12 @@ async function initMenuPage() {
   chipsWrap.innerHTML = chips;
 
   const params = new URLSearchParams(window.location.search);
+  const searchParam = params.get("search");
+  if (searchParam) {
+    searchQuery = searchParam.trim().toLowerCase();
+    document.getElementById("siteSearchInput").value = searchParam;
+  }
+
   const catParam = params.get("cat");
   if (catParam && categories.some((c) => c.id === catParam)) {
     setFilter(catParam);
