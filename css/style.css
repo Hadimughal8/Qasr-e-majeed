@@ -500,6 +500,15 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; colo
 .extras-modal-footer strong { color: var(--maroon); }
 .cart-line-extras { font-size: 0.78rem; color: var(--charcoal-soft); margin: 2px 0 4px; }
 
+/* ---------- Search bar (Menu page) ---------- */
+.search-bar-wrap { display: flex; justify-content: center; margin-bottom: 26px; }
+.search-input-full {
+  width: 100%; max-width: 520px; padding: 14px 22px; border-radius: 999px;
+  border: 1.5px solid var(--line); font-family: inherit; font-size: 0.95rem; background: var(--white);
+  box-shadow: var(--shadow-card);
+}
+.search-input-full:focus { outline: 2px solid var(--saffron); border-color: var(--saffron); }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 880px) {
   .hero { grid-template-columns: 1fr; }
